@@ -1,0 +1,117 @@
+---
+title: "Project Proposal"
+output: pdf_document
+---
+
+
+
+## R Markdown
+
+
+```{r}
+# Installing all required packages
+install.packages("car")
+library(tidyverse)
+library(ggplot2)
+library(gridExtra)
+library(boot)
+library(knitr)
+library(broom) ## Needed to make the regression output 'tidy'
+library(ggplot2)
+library(car)
+
+```
+
+
+```{r}
+# Load in the heart attack data
+ heart_attack <- read.csv("heart.csv")
+glimpse(heart_attack)
+```
+
+
+```{r}
+#Finding any NA values in the data set
+colSums(is.na(heart_attack), na.rm = TRUE)
+df <- as.data.frame(heart_attack)
+heart_attack_data <- tibble::rowid_to_column(df, "index")
+```
+
+
+```{r}
+# Calculating numerical summaries of necessary variables in the dataset.
+heart_attack_1 <- heart_attack_data %>% select(age, chol, trtbps, thalachh)
+summary(heart_attack_1) %>% kable()
+```
+
+
+```{r}
+# Histogram of Age and Cholesterol Levels.
+par(mfrow=c(1,2))
+hgA <- hist(x=heart_attack_data$age, xlab= "Age", main= "Histogram of Age") 
+hgC<-hist(x=heart_attack$chol, xlab= "Cholesterol",
+main= "Histogram of Cholesterol" )
+```
+
+
+
+```{r}
+ggplot(heart_attack_data)+ geom_boxplot(aes(x=age, y=chol,group=1)) + labs(x= "Age", y= "Cholesterol",
+title= "Cholesterol distribution based on Age")
+```
+```{r}
+#Simple linear regression model
+lmHeart <- lm(age~chol, data= heart_attack_data)
+#Summary of our linear regression model
+lmHeart %>%
+  tidy() %>%
+  kable(caption = "The summary from the simple linear regression model", digits = 4)
+```
+
+```{r}
+#Checking correlation between cholesterol levels and age of patient
+cor(heart_attack_data$age, heart_attack_data$chol)
+
+#Simple Linear Regression Analysis for Age and Cholesterol Levels.
+p <- ggplot(heart_attack_data, aes(x=age, y=chol)) + geom_point(col = 'red')
+			p + scale_color_brewer(palette="Dark2") + theme_minimal() +
+  geom_smooth(method=lm, se=FALSE, col = "blue") + ggtitle("Age Vs Cholesterol Levels") +
+			  xlab("Age of Patient") + ylab("Cholesterol level (mg/dL)")
+```
+
+```{r}
+#Performing t test on our data set
+t.test(heart_attack_data$chol, heart_attack_data$age)
+anova(lmHeart)
+```
+
+
+
+
+```{r}
+#Verifying our model satisfies the normality assumption
+x_bar <- mean(heart_attack_data$chol) 
+heart_attack_data %>% 
+ggplot(aes(sample = chol))+ geom_qq()+
+geom_qq_line()+
+labs(x = "$N(0,1)$ Quantiles", y = "cholesterol level quantiles", title = "Normal Q-Q plot",
+subtitle = "Data: cholesterol level")
+```
+
+```{r}
+#Verifying our data satisfies the Homeoscedasticity Assumption
+plot(lmHeart, 1)
+plot(lmHeart, 3)
+plot(lmHeart)
+par(mfrow=c(2,2))
+plot(lmHeart)
+library(lmtest)
+lmtest::bptest(lmHeart)
+dwtest(heart_attack_data$age ~ heart_attack_data$chol)
+```
+
+
+
+
+
+
